@@ -21,6 +21,6 @@ spec:
     spec:
       containers:
         - name: result-app
-          image: akashkam/podman:result
+          image: akashkam/result
           ports:
             - containerPort: 80
