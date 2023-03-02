@@ -1,0 +1,88 @@
+name: Build and Push Docker Image with Podman
+
+on: workflow_dispatch
+  
+
+env:
+  DOCKER_REGISTRY: docker.io
+  DOCKER_REPO : akashkam/vote
+  DOCKER_REPO_R : akashkam/result
+  DOCKER_REPO_W : akashkam/worker
+  
+  
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+    
+    - name: Checkout code
+      uses: actions/checkout@v3.3.0
+
+    - name: Login to Docker registry by Podman
+      run: |
+        podman login  "${{ env.DOCKER_REGISTRY }}" -u "${{ secrets.DOCKER_USERNAME }}" -p ${{ secrets.DOCKER_PASSWORD }}
+    - name: Voting Application Build Image Using Podman
+      run: |
+        podman build -t vote vote/.
+        podman tag localhost/vote vote:${{ github.sha }}
+        podman push vote:${{ github.sha }} "${{ env.DOCKER_REPO }}":${{ github.sha }}
+        
+    - name: Result Application Build Image Using Podman
+      run: |
+        podman build -t result result/.
+        podman tag localhost/result result:${{ github.sha }}
+        podman push result:${{ github.sha }} "${{ env.DOCKER_REPO_R }}":${{ github.sha }}
+  
+
+    - name: Worker Application Build Image Using Podman
+      run: |
+        podman build -t worker worker/.
+        podman tag localhost/worker worker:${{ github.sha }}
+         podman push worker:${{ github.sha }} "${{ env.DOCKER_REPO_W }}":${{ github.sha }}
+        
+    - name: Setup kubectl and plugins
+      uses: marcofranssen/setup-kubectl@v0.3.0
+      with:
+        kubectlVersion: latest
+
+
+    - uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBECONFIG }}
+        context: akscluster-002
+   
+    - name: Manifest apply to AKS cluster
+      run: |
+        ls
+        cd k8s-specifications-podman/
+        kubectl apply -f .
+
+    - name: Install Trivy
+      run: |
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.tar.gz
+        tar zxvf trivy_0.18.3_Linux-64bit.tar.gz
+        sudo mv trivy /usr/local/bin
+
+    - name: Scan image with Trivy for Voting Application
+      run:  |
+        trivy  --severity CRITICAL,HIGH,MEDIUM vote:${{ github.sha }} 
+
+    - name: Scan image with Trivy for Result Application
+      run:  |
+        trivy  --severity CRITICAL,HIGH,MEDIUM result:${{ github.sha }} 
+
+    - name: Scan image with Trivy for Worker Application
+      run:  |
+        trivy   --severity CRITICAL,HIGH,MEDIUM worker:${{ github.sha }}
+ 
+
+
+      
+
+
+
+
+
