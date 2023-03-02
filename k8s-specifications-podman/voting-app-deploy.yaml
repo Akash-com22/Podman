@@ -23,6 +23,6 @@ spec:
       - name: vote
       containers:
       - name: voting-app
-        image: akashkam/podman:vote
+        image: akashkam/vote
         ports:
         - containerPort: 80 
