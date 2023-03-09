@@ -51,15 +51,15 @@ jobs:
 
     - name: Scan image with Trivy for Voting Application
       run:  |
-        trivy  --severity CRITICAL,HIGH,MEDIUM vote:${{ github.sha }} 
+        trivy  --severity CRITICAL,HIGH,MEDIUM "${{ env.DOCKER_REPO }}":${{ github.sha }} 
 
     - name: Scan image with Trivy for Result Application
       run:  |
-        trivy  --severity CRITICAL,HIGH,MEDIUM result:${{ github.sha }} 
+        trivy  --severity CRITICAL,HIGH,MEDIUM "${{ env.DOCKER_REPO_R }}":${{ github.sha }} 
 
     - name: Scan image with Trivy for Worker Application
       run:  |
-        trivy   --severity CRITICAL,HIGH,MEDIUM worker:${{ github.sha }}
+        trivy   --severity CRITICAL,HIGH,MEDIUM "${{ env.DOCKER_REPO_W }}":${{ github.sha }}
  
     - name: Setup kubectl and plugins
       uses: marcofranssen/setup-kubectl@v0.3.0
